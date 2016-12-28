@@ -59,23 +59,9 @@ public:
 		return *this;
 	}
 
-	inline ColorFloatPixel& operator *= (const float &f)
-	{
-		b *= f;
-		g *= f;
-		r *= f;
-		a *= f;
-		return *this;
-	}
-
 	inline ColorFloatPixel operator + (const ColorFloatPixel &other) const
 	{
 		return ColorFloatPixel(b + other.b, g + other.g, r + other.r, a + other.a);
-	}
-
-	inline ColorFloatPixel operator - (const ColorFloatPixel &other) const
-	{
-		return ColorFloatPixel(b - other.b, g - other.g, r - other.r, a - other.a);
 	}
 
 	inline ColorFloatPixel operator * (float q) const

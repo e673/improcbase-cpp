@@ -263,37 +263,35 @@ std::unique_ptr<Gdiplus::Bitmap> ImageIO::ImageToBitmap(const ColorByteImage &im
 
 // -----------------------------------------------------------------------------------------------
 
+static void BitmapToFile(Gdiplus::Bitmap &B, const wchar_t *filename)
+{
+	CLSID pngClsid;
+	GetEncoderClsid(L"image/png", &pngClsid);
+	B.Save(filename, &pngClsid);
+}
+
 void ImageIO::ImageToFile(const GrayscaleFloatImage &image, const wchar_t *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
-	CLSID pngClsid;
-	GetEncoderClsid(L"image/png", &pngClsid);
-	B->Save(filename, &pngClsid);
-
+	BitmapToFile(*B, filename);
 }
 
 void ImageIO::ImageToFile(const GrayscaleByteImage &image, const wchar_t *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
-	CLSID pngClsid;
-	GetEncoderClsid(L"image/png", &pngClsid);
-	B->Save(filename, &pngClsid);
+	BitmapToFile(*B, filename);
 }
 
 void ImageIO::ImageToFile(const ColorFloatImage &image, const wchar_t *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
-	CLSID pngClsid;
-	GetEncoderClsid(L"image/png", &pngClsid);
-	B->Save(filename, &pngClsid);
+	BitmapToFile(*B, filename);
 }
 
 void ImageIO::ImageToFile(const ColorByteImage &image, const wchar_t *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
-	CLSID pngClsid;
-	GetEncoderClsid(L"image/png", &pngClsid);
-	B->Save(filename, &pngClsid);
+	BitmapToFile(*B, filename);
 }
 
 // =======================================================================================================

@@ -45,7 +45,7 @@ public:
 		this->rawdata.reset(new PixelType[Width * Height]);
 	}
 
-	// --- The code is need for C++11 compatibility (for VS2013) ---
+	// --- The code is needed for C++11 compatibility (for VS2013) ---
 
 	ImageBase(const ImageBase&) = default;
 	ImageBase(ImageBase&&) = default;
