@@ -25,8 +25,26 @@ THE SOFTWARE.
 #include "imageio.hpp"
 
 #include <vector>
+#include <cstdint>
+#include <fstream>
+#include <memory>
 
 // =======================================================================================================
+
+static inline unsigned char f2b(float x)
+{
+	if (x < 0.0f)
+		return 0;
+	else if (x > 255.0f)
+		return 255;
+	else
+		return (unsigned char)x;
+}
+
+// =======================================================================================================
+
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
 
 class LockedBitmap
 {
@@ -201,41 +219,52 @@ ColorByteImage ImageIO::BitmapToColorByteImage(Gdiplus::Bitmap &B)
 
 // -----------------------------------------------------------------------------------------------
 
-GrayscaleFloatImage ImageIO::FileToGrayscaleFloatImage(const wchar_t* filename)
+
+GrayscaleFloatImage ImageIO::FileToGrayscaleFloatImage(const char* filename)
 {
-	Gdiplus::Bitmap B(filename);
+	int bufsize = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	std::unique_ptr<wchar_t[]> buf(new wchar_t[bufsize + 1]);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, buf.get(), bufsize);
+	buf[bufsize] = 0;
+
+	Gdiplus::Bitmap B(buf.get());
 	return BitmapToGrayscaleFloatImage(B);
 }
 
-GrayscaleByteImage ImageIO::FileToGrayscaleByteImage(const wchar_t* filename)
+GrayscaleByteImage ImageIO::FileToGrayscaleByteImage(const char* filename)
 {
-	Gdiplus::Bitmap B(filename);
+	int bufsize = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	std::unique_ptr<wchar_t[]> buf(new wchar_t[bufsize + 1]);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, buf.get(), bufsize);
+	buf[bufsize] = 0;
+
+	Gdiplus::Bitmap B(buf.get());
 	return BitmapToGrayscaleByteImage(B);
 }
 
-ColorFloatImage ImageIO::FileToColorFloatImage(const wchar_t* filename)
+ColorFloatImage ImageIO::FileToColorFloatImage(const char* filename)
 {
-	Gdiplus::Bitmap B(filename);
+	int bufsize = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	std::unique_ptr<wchar_t[]> buf(new wchar_t[bufsize + 1]);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, buf.get(), bufsize);
+	buf[bufsize] = 0;
+
+	Gdiplus::Bitmap B(buf.get());
 	return BitmapToColorFloatImage(B);
 }
 
-ColorByteImage ImageIO::FileToColorByteImage(const wchar_t* filename)
+ColorByteImage ImageIO::FileToColorByteImage(const char* filename)
 {
-	Gdiplus::Bitmap B(filename);
+	int bufsize = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	std::unique_ptr<wchar_t[]> buf(new wchar_t[bufsize + 1]);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, buf.get(), bufsize);
+	buf[bufsize] = 0;
+
+	Gdiplus::Bitmap B(buf.get());
 	return BitmapToColorByteImage(B);
 }
 
 // -----------------------------------------------------------------------------------------------
-
-static inline unsigned char f2b(float x)
-{
-	if (x < 0.0f)
-		return 0;
-	else if (x > 255.0f)
-		return 255;
-	else
-		return (unsigned char)x;
-}
 
 std::unique_ptr<Gdiplus::Bitmap> ImageIO::ImageToBitmap(const GrayscaleFloatImage &image)
 {
@@ -263,35 +292,273 @@ std::unique_ptr<Gdiplus::Bitmap> ImageIO::ImageToBitmap(const ColorByteImage &im
 
 // -----------------------------------------------------------------------------------------------
 
-static void BitmapToFile(Gdiplus::Bitmap &B, const wchar_t *filename)
+static void BitmapToFile(Gdiplus::Bitmap &B, const char *filename)
 {
+	int bufsize = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
+	std::unique_ptr<wchar_t[]> buf(new wchar_t[bufsize + 1]);
+	MultiByteToWideChar(CP_UTF8, 0, filename, -1, buf.get(), bufsize);
+	buf[bufsize] = 0;
+
 	CLSID pngClsid;
 	GetEncoderClsid(L"image/png", &pngClsid);
-	B.Save(filename, &pngClsid);
+	B.Save(buf.get(), &pngClsid);
 }
 
-void ImageIO::ImageToFile(const GrayscaleFloatImage &image, const wchar_t *filename)
+void ImageIO::ImageToFile(const GrayscaleFloatImage &image, const char *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
 	BitmapToFile(*B, filename);
 }
 
-void ImageIO::ImageToFile(const GrayscaleByteImage &image, const wchar_t *filename)
+void ImageIO::ImageToFile(const GrayscaleByteImage &image, const char *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
 	BitmapToFile(*B, filename);
 }
 
-void ImageIO::ImageToFile(const ColorFloatImage &image, const wchar_t *filename)
+void ImageIO::ImageToFile(const ColorFloatImage &image, const char *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
 	BitmapToFile(*B, filename);
 }
 
-void ImageIO::ImageToFile(const ColorByteImage &image, const wchar_t *filename)
+void ImageIO::ImageToFile(const ColorByteImage &image, const char *filename)
 {
 	std::unique_ptr<Gdiplus::Bitmap> B = ImageToBitmap(image);
 	BitmapToFile(*B, filename);
 }
+
+#else
+
+#pragma pack(push, 1)
+
+struct BITMAPFILEHEADER
+{
+	int16_t bfType;
+	int32_t bfSize;
+	int16_t bfReserved1;
+	int16_t bfReserved2;
+	int32_t bfOffBits;
+};
+
+struct BITMAPCOREHEADER
+{
+	int32_t bcSize;
+	int16_t bcWidth;
+	int16_t bcHeight;
+	int16_t bcPlanes;
+	int16_t bcBitCount;
+};
+
+struct BITMAPINFOHEADER
+{
+	int32_t biSize;
+	int32_t biWidth;
+	int32_t biHeight;
+	int16_t biPlanes;
+	int16_t biBitCount;
+	int32_t biCompression;
+	int32_t biSizeImage;
+	int32_t biXPelsPerMeter;
+	int32_t biYPelsPerMeter;
+	int32_t biClrUsed;
+	int32_t biClrImportant;
+};
+
+#pragma pack(pop)
+
+
+GrayscaleFloatImage ImageIO::FileToGrayscaleFloatImage(const char* filename)
+{
+	ColorByteImage img = FileToColorByteImage(filename);
+	GrayscaleFloatImage res(img.Width(), img.Height());
+
+	for (int j = 0; j < img.Height(); j++)
+		for (int i = 0; i < img.Width(); i++)
+		{
+			auto p = img(i, j);
+			res(i, j) = 0.114f * p.b + 0.587f * p.g + 0.299f * p.r;
+		}
+
+	return res;
+}
+
+GrayscaleByteImage ImageIO::FileToGrayscaleByteImage(const char* filename)
+{
+	ColorByteImage img = FileToColorByteImage(filename);
+	GrayscaleByteImage res(img.Width(), img.Height());
+
+	for (int j = 0; j < img.Height(); j++)
+		for (int i = 0; i < img.Width(); i++)
+		{
+			auto p = img(i, j);
+			res(i, j) = (unsigned char)(0.114f * p.b + 0.587f * p.g + 0.299f * p.r);
+		}
+
+	return res;
+}
+
+ColorFloatImage ImageIO::FileToColorFloatImage(const char* filename)
+{
+	ColorByteImage img = FileToColorByteImage(filename);
+	ColorFloatImage res(img.Width(), img.Height());
+
+	for (int j = 0; j < img.Height(); j++)
+		for (int i = 0; i < img.Width(); i++)
+		{
+			auto p = img(i, j);
+			res(i, j) = ColorFloatPixel(p.b, p.g, p.r, p.a);
+		}
+
+	return res;
+}
+
+ColorByteImage ImageIO::FileToColorByteImage(const char* filename)
+{
+	std::fstream f(filename, std::ios::in | std::ios::binary);
+
+	if (!f.is_open())
+		return ColorByteImage(0, 0);
+
+	BITMAPFILEHEADER header;
+	f.read((char*)&header, sizeof(BITMAPFILEHEADER));
+	if (header.bfType != 0x4D42)
+		return ColorByteImage(0, 0);
+
+	int32_t size;
+	f.read((char*)&size, sizeof(int32_t));
+
+	int width = 0, height = 0;
+
+	if (size == sizeof(BITMAPCOREHEADER))
+	{
+		BITMAPCOREHEADER info;
+		info.bcSize = size;
+		f.read((char*)&info + sizeof(int32_t), sizeof(BITMAPCOREHEADER) - sizeof(int32_t));
+		if (info.bcPlanes != 1 || info.bcBitCount != 24)
+			return ColorByteImage(0, 0);
+
+		width = info.bcWidth;
+		height = info.bcHeight;
+	}
+	else if (size == sizeof(BITMAPINFOHEADER))
+	{
+		BITMAPINFOHEADER info;
+		info.biSize = size;
+		f.read((char*)&info + sizeof(int32_t), sizeof(BITMAPINFOHEADER) - sizeof(int32_t));
+		if (info.biPlanes != 1 || info.biBitCount != 24 || info.biCompression != 0)
+			return ColorByteImage(0, 0);
+
+		width = info.biWidth;
+		height = info.biHeight;
+	}
+	else
+		return ColorByteImage(0, 0);
+
+	f.seekg(header.bfOffBits, std::ios::beg);
+
+	int stride = (width * 3 + 3) / 4 * 4;
+	std::unique_ptr<char[]> buffer(new char[stride]);
+
+	ColorByteImage res(width, height);
+
+	for (int j = height - 1; j >= 0; j--)
+	{
+		f.read(buffer.get(), stride);
+
+		for (int i = 0; i < width; i++)
+		{
+			res(i, j) = ColorBytePixel(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 1], 255);
+		}
+	}
+
+	return res;
+}
+
+void ImageIO::ImageToFile(const GrayscaleFloatImage &image, const char *filename)
+{
+	ColorByteImage res(image.Width(), image.Height());
+
+	for (int j = 0; j < image.Height(); j++)
+		for (int i = 0; i < image.Width(); i++)
+		{
+			auto p = f2b(image(i, j));
+			res(i, j) = ColorBytePixel(p, p, p);
+		}
+
+	ImageToFile(res, filename);
+}
+
+void ImageIO::ImageToFile(const GrayscaleByteImage &image, const char *filename)
+{
+	ColorByteImage res(image.Width(), image.Height());
+
+	for (int j = 0; j < image.Height(); j++)
+		for (int i = 0; i < image.Width(); i++)
+		{
+			auto p = image(i, j);
+			res(i, j) = ColorBytePixel(p, p, p);
+		}
+
+	ImageToFile(res, filename);
+
+}
+
+void ImageIO::ImageToFile(const ColorFloatImage &image, const char *filename)
+{
+	ColorByteImage res(image.Width(), image.Height());
+
+	for (int j = 0; j < image.Height(); j++)
+		for (int i = 0; i < image.Width(); i++)
+		{
+			auto p = image(i, j);
+			res(i, j) = ColorBytePixel(f2b(p.b), f2b(p.g), f2b(p.r));
+		}
+
+	ImageToFile(res, filename);
+}
+
+void ImageIO::ImageToFile(const ColorByteImage &image, const char *filename)
+{
+	std::fstream f(filename, std::ios::out | std::ios::trunc | std::ios::binary);
+
+	int stride = (image.Width() * 3 + 3) / 4 * 4;
+
+	BITMAPFILEHEADER header;
+	header.bfType = 0x4D42;
+	header.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPCOREHEADER) + stride * image.Height();
+	header.bfReserved1 = 0;
+	header.bfReserved2 = 0;
+	header.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPCOREHEADER);
+
+	BITMAPCOREHEADER info;
+	info.bcSize = sizeof(BITMAPCOREHEADER);
+	info.bcWidth = image.Width();
+	info.bcHeight = image.Height();
+	info.bcPlanes = 1;
+	info.bcBitCount = 24;
+
+	f.write((char*)&header, sizeof(BITMAPFILEHEADER));
+	f.write((char*)&info, sizeof(BITMAPCOREHEADER));
+
+	std::unique_ptr<char[]> buffer(new char[stride]);
+
+	for (int j = image.Height() - 1; j >= 0; j--)
+	{
+		for (int i = 0; i < image.Width(); i++)
+		{
+			ColorBytePixel p = image(i, j);
+			buffer[i * 3] = p.b;
+			buffer[i * 3 + 1] = p.g;
+			buffer[i * 3 + 2] = p.r;
+		}
+
+		f.write(buffer.get(), stride);
+	}
+
+	f.close();
+}
+
+#endif
 
 // =======================================================================================================

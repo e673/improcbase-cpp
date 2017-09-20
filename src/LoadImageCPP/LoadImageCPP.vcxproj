@@ -1,20 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
- 
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E01CFAC8-4391-4875-8AE5-F1CB5C2774E4}</ProjectGuid>
     <RootNamespace>ip</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
-  
   <PropertyGroup Label="Configuration">
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-
   <Import Project="..\..\props\Application.props" />
- 
   <ItemGroup>
     <ClInclude Include="imageformats.hpp" />
     <ClInclude Include="imageio.hpp" />
@@ -24,7 +21,5 @@
     <ClCompile Include="imageio.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-
 </Project>

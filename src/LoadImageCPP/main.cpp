@@ -1,19 +1,23 @@
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+
 #include <Windows.h>	// Windows.h must be included before GdiPlus.h
 #include <GdiPlus.h>
-
-#include "imageformats.hpp"
-#include "imageio.hpp"
 
 #pragma comment(lib, "gdiplus.lib")
 
 ULONG_PTR m_gdiplusToken;   // class member
+
+#endif
+
+#include "imageformats.hpp"
+#include "imageio.hpp"
 
 float ToGray(ColorFloatPixel pixel)
 {
 	return pixel.b * 0.114f + pixel.g * 0.587f + pixel.r * 0.299f;
 }
 
-void TestFunc(wchar_t *inputfilename, wchar_t *outputfilename)
+void TestFunc(char *inputfilename, char *outputfilename)
 {
 	ColorFloatImage image = ImageIO::FileToColorFloatImage(inputfilename);
 	GrayscaleFloatImage res(image.Width(), image.Height());
@@ -25,7 +29,7 @@ void TestFunc(wchar_t *inputfilename, wchar_t *outputfilename)
 	ImageIO::ImageToFile(res, outputfilename);
 }
 
-int main_func(int argc, wchar_t* argv[])
+int main_func(int argc, char* argv[])
 {
 	// Put your code here
 
@@ -39,8 +43,11 @@ int main_func(int argc, wchar_t* argv[])
 
 // wchar_t - UTF16 character
 // wmain - entry point for wchar_t arguments
-int wmain(int argc, wchar_t* argv[])
+// Note: changed to UTF-8 due to multiplatform compatibility
+int main(int argc, char* argv[])
 {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+
 	 // InitInstance
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     Gdiplus::GdiplusStartup(&m_gdiplusToken, &gdiplusStartupInput, NULL);
@@ -60,5 +67,8 @@ int wmain(int argc, wchar_t* argv[])
     Gdiplus::GdiplusShutdown(m_gdiplusToken);
 
 	return exit_code;
+#else
+	return main_func(argc, argv);
+#endif
 }
 
